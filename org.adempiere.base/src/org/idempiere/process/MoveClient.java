@@ -789,6 +789,10 @@ public class MoveClient extends SvrProcess {
 				.setOrderBy("TableName")
 				.list();
 
+	  PreparedStatement stmtInsertConv = null;
+	  if (p_IsCopyClient)
+		stmtInsertConv = DB.prepareStatement(insertConversionId, get_TrxName());
+	  try {
 		// create/verify the ID conversions
 		for (MTable table : tables) {
 			String tableName = table.getTableName();
@@ -818,11 +822,8 @@ public class MoveClient extends SvrProcess {
 			String selectGetIds = DB.getDatabase().convertStatement(selectGetIdsSB.toString());
 			PreparedStatement stmtGI = null;
 			ResultSet rsGI = null;
-			PreparedStatement stmtInsertConv = null;
 			try {
 				stmtGI = externalConn.prepareStatement(selectGetIds, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
-				if (p_IsCopyClient)
-					stmtInsertConv = DB.prepareStatement(insertConversionId, get_TrxName());
 				rsGI = stmtGI.executeQuery();
 				while (rsGI.next()) {
 					Object source_Key = rsGI.getObject(1);
@@ -873,15 +874,20 @@ public class MoveClient extends SvrProcess {
 						}
 					}
 				}
-				if (p_IsCopyClient)
-					stmtInsertConv.executeBatch();
 			} catch (SQLException e) {
-				throw new AdempiereException("Could not execute external query: " + selectGetIds + "\nCause = " + e.getLocalizedMessage());
+				throw new AdempiereException("Could not execute query: " + selectGetIds + "\nCause = " + e.getLocalizedMessage());
 			} finally {
 				DB.close(rsGI, stmtGI);
 			}
 
 		}
+		if (p_IsCopyClient)
+			stmtInsertConv.executeBatch();
+	  } catch (SQLException e) {
+		throw new AdempiereException("Could not execute insert: " + insertConversionId + "\nCause = " + e.getLocalizedMessage());
+	  } finally {
+		DB.close(null, stmtInsertConv);
+	  }
 
 		try {
 			commitEx(); // commit the T_MoveClient table to analyze potential problems
@@ -1195,12 +1201,18 @@ public class MoveClient extends SvrProcess {
 						}
 					}
 				}
-				if (p_IsCopyClient)
-					stmtIns.executeBatch();
+				if (p_IsCopyClient) {
+					try {
+						stmtIns.executeBatch();
+					} catch (SQLException e) {
+						throw new AdempiereException("Could not execute batch insert: " + insertSB + "\nCause = " + e.getLocalizedMessage());
+					}
+				}
 			} catch (SQLException e) {
-				throw new AdempiereException("Could not execute external query: " + selectGetData + "\nCause = " + e.getLocalizedMessage());
+				throw new AdempiereException("Could not execute query: " + selectGetData + "\nCause = " + e.getLocalizedMessage());
 			} finally {
 				DB.close(rsGD, stmtGD);
+				DB.close(null, stmtIns);
 			}
 
 		}
