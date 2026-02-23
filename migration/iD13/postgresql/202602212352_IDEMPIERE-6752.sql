@@ -1,5 +1,5 @@
--- IDEMPIERE-6762 Exception occurs when attempting to export a simple fact view report
-SELECT register_migration_script('202602212352_IDEMPIERE-6762.sql') FROM dual;
+-- IDEMPIERE-6752 Workflow Packout missing Process Parameters
+SELECT register_migration_script('202602212352_IDEMPIERE-6752.sql') FROM dual;
 
 -- Feb 21, 2026, 11:52:23 PM CET
 UPDATE AD_Field SET DisplayLogic=NULL,Updated=TO_TIMESTAMP('2026-02-21 23:52:23','YYYY-MM-DD HH24:MI:SS'),UpdatedBy=100 WHERE AD_Field_ID=202525
