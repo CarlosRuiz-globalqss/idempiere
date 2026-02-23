@@ -793,6 +793,8 @@ public class MoveClient extends SvrProcess {
 	  if (p_IsCopyClient)
 		stmtInsertConv = DB.prepareStatement(insertConversionId, get_TrxName());
 	  try {
+		int batchCount = 0;
+		final int batchFlushSize = MSysConfig.getIntValue(MSysConfig.COPY_TENANT_BATCH_FLUSH_SIZE, 10000);
 		// create/verify the ID conversions
 		for (MTable table : tables) {
 			String tableName = table.getTableName();
@@ -867,6 +869,12 @@ public class MoveClient extends SvrProcess {
 							stmtInsertConv.setString(5, null);
 							stmtInsertConv.addBatch();
 							stmtInsertConv.clearParameters();
+							batchCount++;
+							if (batchCount % batchFlushSize == 0) {
+								if (log.isLoggable(Level.INFO)) log.info("Flushing batch of ID conversions with batch size " + batchFlushSize);
+								stmtInsertConv.executeBatch();
+								batchCount = 0;
+							}
 						} else {
 							DB.executeUpdateEx(insertConversionId,
 									new Object[] {getAD_PInstance_ID(), tableName.toUpperCase(), source_Key.toString(), target_Key.toString(), null},
@@ -881,8 +889,10 @@ public class MoveClient extends SvrProcess {
 			}
 
 		}
-		if (p_IsCopyClient)
+		if (p_IsCopyClient && batchCount > 0) {
+			if (log.isLoggable(Level.INFO)) log.info("Flushing last batch of ID conversions with batch size " + batchCount);
 			stmtInsertConv.executeBatch();
+		}
 	  } catch (SQLException e) {
 		throw new AdempiereException("Could not execute insert: " + insertConversionId + "\nCause = " + e.getLocalizedMessage());
 	  } finally {
@@ -965,6 +975,8 @@ public class MoveClient extends SvrProcess {
 				if (p_IsCopyClient)
 					stmtIns = DB.prepareStatement(insertSB.toString(), get_TrxName());
 				rsGD = stmtGD.executeQuery();
+				int batchCount = 0;
+				final int batchFlushSize = MSysConfig.getIntValue(MSysConfig.COPY_TENANT_BATCH_FLUSH_SIZE, 10000);
 				while (rsGD.next()) {
 					boolean insertRecord = true;
 					for (int i = 0; i < ncols; i++) {
@@ -1193,6 +1205,12 @@ public class MoveClient extends SvrProcess {
 									stmtIns.setObject(paramIndex++, param);
 								stmtIns.addBatch();
 								stmtIns.clearParameters();
+								batchCount++;
+								if (batchCount % batchFlushSize == 0) {
+									if (log.isLoggable(Level.INFO)) log.info("Flushing batch of inserts for table " + tableName + " with batch size " + batchFlushSize);
+									stmtIns.executeBatch();
+									batchCount = 0;
+								}
 							} else {
 								DB.executeUpdateEx(insertSB.toString(), parameters, get_TrxName());
 							}
@@ -1201,8 +1219,9 @@ public class MoveClient extends SvrProcess {
 						}
 					}
 				}
-				if (p_IsCopyClient) {
+				if (p_IsCopyClient && batchCount > 0) {
 					try {
+						if (log.isLoggable(Level.INFO)) log.info("Flushing last batch of inserts for table " + tableName + " with batch size " + batchCount);
 						stmtIns.executeBatch();
 					} catch (SQLException e) {
 						throw new AdempiereException("Could not execute batch insert: " + insertSB + "\nCause = " + e.getLocalizedMessage());
