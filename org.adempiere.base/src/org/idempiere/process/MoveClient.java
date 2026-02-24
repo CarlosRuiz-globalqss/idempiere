@@ -782,6 +782,10 @@ public class MoveClient extends SvrProcess {
 		// validation construct the list of tables and columns to process
 		// NOTE that the whole process will be done in a single transaction, foreign keys will be validated on commit
 
+		int batchFlushSize = MSysConfig.getIntValue(MSysConfig.COPY_TENANT_BATCH_FLUSH_SIZE, 10000);
+		if (batchFlushSize <= 0)
+			batchFlushSize = 10000;
+
 		List<MTable> tables = new Query(getCtx(), MTable.Table_Name,
 				"IsView='N' AND " + p_excludeTablesWhere,
 				get_TrxName())
@@ -794,7 +798,6 @@ public class MoveClient extends SvrProcess {
 		stmtInsertConv = DB.prepareStatement(insertConversionId, get_TrxName());
 	  try {
 		int batchCount = 0;
-		final int batchFlushSize = MSysConfig.getIntValue(MSysConfig.COPY_TENANT_BATCH_FLUSH_SIZE, 10000);
 		// create/verify the ID conversions
 		for (MTable table : tables) {
 			String tableName = table.getTableName();
@@ -976,7 +979,6 @@ public class MoveClient extends SvrProcess {
 					stmtIns = DB.prepareStatement(insertSB.toString(), get_TrxName());
 				rsGD = stmtGD.executeQuery();
 				int batchCount = 0;
-				final int batchFlushSize = MSysConfig.getIntValue(MSysConfig.COPY_TENANT_BATCH_FLUSH_SIZE, 10000);
 				while (rsGD.next()) {
 					boolean insertRecord = true;
 					for (int i = 0; i < ncols; i++) {
