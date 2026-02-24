@@ -6,12 +6,16 @@ import java.util.logging.Level;
 
 import org.compiere.model.MBPartnerProduct;
 import org.compiere.model.MProcessPara;
+import org.compiere.model.MProduct;
 import org.compiere.model.MProductDownload;
 import org.compiere.model.MProductPrice;
+import org.compiere.model.PO;
 import org.compiere.model.Query;
 import org.compiere.model.X_M_RelatedProduct;
 import org.compiere.model.X_M_Replenish;
 import org.compiere.model.X_M_Substitute;
+import org.eevolution.model.MPPProductBOM;
+import org.eevolution.model.MPPProductBOMLine;
 
 /**
  * Process that copies product information such as substitutes, related, prices, downloads
@@ -54,6 +58,31 @@ public class CopyProduct extends SvrProcess {
 			throw new IllegalArgumentException("Target M_Product_ID == 0");
 		if (m_copyFromId == 0)
 			throw new IllegalArgumentException("Source M_Product_ID == 0");
+
+		// It checks if the source product is an BOM to copy the records.
+		MProduct p = new MProduct(getCtx(), m_copyFromId, get_TrxName());
+		if (p.isBOM()) {
+			// If the target product is not marked as BOM, an error is thrown to the user.
+			if ((new MProduct(getCtx(), toMProductID, get_TrxName())).isBOM()) {
+				List<MPPProductBOM> boms = MPPProductBOM.getProductBOMs(p);
+				// get bom lines from the source product and copy to the target
+				for(MPPProductBOM bom : boms) {
+					MPPProductBOM newBOM = new MPPProductBOM(getCtx(), 0, get_TrxName());
+					PO.copyValues(bom, newBOM);
+					newBOM.set_ValueNoCheck(MPPProductBOM.COLUMNNAME_PP_Product_BOM_ID, 0);
+					newBOM.setM_Product_ID(toMProductID);
+					newBOM.saveEx();
+					
+					for (MPPProductBOMLine bomLine : bom.getLines()) {
+						MPPProductBOMLine newBomLine = new MPPProductBOMLine(getCtx(), 0, get_TrxName());
+						PO.copyValues(bomLine, newBomLine);
+						newBomLine.set_ValueNoCheck(MPPProductBOMLine.COLUMNNAME_PP_Product_BOMLine_ID, 0);
+						newBomLine.setPP_Product_BOM_ID(newBOM.get_ID());
+						newBomLine.saveEx();
+					}
+				}
+			}
+		}
 		
 		// Get product price from the source product
 		List<MProductPrice> prices = new Query(getCtx(), MProductPrice.Table_Name, "M_Product_ID=?", get_TrxName())
