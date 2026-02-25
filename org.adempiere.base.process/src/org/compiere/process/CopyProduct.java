@@ -59,7 +59,7 @@ public class CopyProduct extends SvrProcess {
 		if (m_copyFromId == 0)
 			throw new IllegalArgumentException("Source M_Product_ID == 0");
 
-		// It checks if the source product is an BOM to copy the records.
+		// It checks if the source product is a BOM to copy the records.
 		MProduct p = new MProduct(getCtx(), m_copyFromId, get_TrxName());
 		if (p.isBOM()) {
 			if ((new MProduct(getCtx(), toMProductID, get_TrxName())).isBOM()) {
