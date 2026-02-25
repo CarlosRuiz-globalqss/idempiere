@@ -62,7 +62,6 @@ public class CopyProduct extends SvrProcess {
 		// It checks if the source product is an BOM to copy the records.
 		MProduct p = new MProduct(getCtx(), m_copyFromId, get_TrxName());
 		if (p.isBOM()) {
-			// If the target product is not marked as BOM, an error is thrown to the user.
 			if ((new MProduct(getCtx(), toMProductID, get_TrxName())).isBOM()) {
 				List<MPPProductBOM> boms = MPPProductBOM.getProductBOMs(p);
 				// get bom lines from the source product and copy to the target
