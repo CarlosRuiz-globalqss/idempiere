@@ -59,27 +59,33 @@ public class CopyProduct extends SvrProcess {
 		if (m_copyFromId == 0)
 			throw new IllegalArgumentException("Source M_Product_ID == 0");
 
+		int count = 0;
+
 		// It checks if the source product is a BOM to copy the records.
 		MProduct p = new MProduct(getCtx(), m_copyFromId, get_TrxName());
 		if (p.isBOM()) {
 			if ((new MProduct(getCtx(), toMProductID, get_TrxName())).isBOM()) {
 				List<MPPProductBOM> boms = MPPProductBOM.getProductBOMs(p);
 				// get bom lines from the source product and copy to the target
+				int bomCount = 0;
 				for(MPPProductBOM bom : boms) {
 					MPPProductBOM newBOM = new MPPProductBOM(getCtx(), 0, get_TrxName());
 					PO.copyValues(bom, newBOM);
 					newBOM.set_ValueNoCheck(MPPProductBOM.COLUMNNAME_PP_Product_BOM_ID, 0);
 					newBOM.setM_Product_ID(toMProductID);
 					newBOM.saveEx();
-					
+					bomCount++;
+
 					for (MPPProductBOMLine bomLine : bom.getLines()) {
 						MPPProductBOMLine newBomLine = new MPPProductBOMLine(getCtx(), 0, get_TrxName());
 						PO.copyValues(bomLine, newBomLine);
 						newBomLine.set_ValueNoCheck(MPPProductBOMLine.COLUMNNAME_PP_Product_BOMLine_ID, 0);
 						newBomLine.setPP_Product_BOM_ID(newBOM.get_ID());
 						newBomLine.saveEx();
+						bomCount++;
 					}
 				}
+				count += bomCount;
 			}
 		}
 		
@@ -101,7 +107,7 @@ public class CopyProduct extends SvrProcess {
 			priceDst.saveEx(get_TrxName());
 		}
 		
-		int count = prices.size();
+		count += prices.size();
 		
 		// Copy substitutes
 		List<X_M_Substitute> subs = new Query(getCtx(), X_M_Substitute.Table_Name, "M_Product_ID=? and NOT substitute_ID=?", get_TrxName())
