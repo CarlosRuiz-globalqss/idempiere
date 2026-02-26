@@ -1388,7 +1388,10 @@ public final class FactLine extends X_Fact_Acct
 				setM_Locator_ID(fact.getM_Locator_ID());
 				setA_Asset_ID(fact.getA_Asset_ID());
 				setM_Warehouse_ID(fact.getM_Warehouse_ID());
-				setC_Tax_ID(fact.getC_Tax_ID());
+				// do not overwrite tax if is already set from the reversal document line
+				// means it was set in the createFacts
+				if (getC_Tax_ID() == 0)
+					setC_Tax_ID(fact.getC_Tax_ID());
 				setC_Charge_ID(fact.getC_Charge_ID());
 				setC_CostCenter_ID(fact.getC_CostCenter_ID());
 				setC_Department_ID(fact.getC_Department_ID());	
@@ -1396,7 +1399,6 @@ public final class FactLine extends X_Fact_Acct
 				setUser1_ID(fact.getUser1_ID());
 				setUser2_ID(fact.getUser2_ID());
 				setC_UOM_ID(fact.getC_UOM_ID());
-				setC_Tax_ID(fact.getC_Tax_ID());
 				setM_AttributeSetInstance_ID(fact.getM_AttributeSetInstance_ID());	
 				setCustomFieldText1(fact.getCustomFieldText1());
 				setCustomFieldText2(fact.getCustomFieldText2());
