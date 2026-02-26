@@ -25,8 +25,10 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import org.adempiere.exceptions.BackDateTrxNotAllowedException;
+import org.compiere.Adempiere;
 import org.compiere.report.MReportTree;
 import org.compiere.util.CCache;
+import org.compiere.util.CacheMgt;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
 import org.compiere.util.KeyNamePair;
@@ -49,7 +51,7 @@ public class MAcctSchema extends X_C_AcctSchema implements ImmutablePOSupport
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -8345280015158127523L;
+	private static final long serialVersionUID = -992571446107996264L;
 
 	/**
 	 *  Get AccountSchema
@@ -864,6 +866,21 @@ public class MAcctSchema extends X_C_AcctSchema implements ImmutablePOSupport
 	 */
 	public MCurrency getCurrency() {
 		return MCurrency.get(getCtx(), getC_Currency_ID());
+	}
+
+	@Override
+	protected boolean afterSave(boolean newRecord, boolean success) {
+		if (!success)
+			return success;
+		if (   newRecord
+			|| is_ValueChanged(COLUMNNAME_StartDate)
+			|| is_ValueChanged(COLUMNNAME_EndDate)
+			|| is_ValueChanged(COLUMNNAME_Period_OpenHistory)
+			|| is_ValueChanged(COLUMNNAME_Period_OpenFuture)
+			|| is_ValueChanged(COLUMNNAME_BackDateDay)
+			|| is_ValueChanged(COLUMNNAME_AutoPeriodControl))
+			Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(MPeriod.Table_Name));
+		return success;
 	}
 
 }	//	MAcctSchema
