@@ -916,7 +916,7 @@ public class MOrderLine extends X_C_OrderLine
 		// See IDEMPIERE-6749 - price list including taxes combined with summary taxes are wrongly calculated
 		// forbid this operation until solved
 		if (isTaxIncluded() && getTax().isSummary()) {
-			log.saveError("Error", "Price List Including Tax with Summary Tax not Allowed");
+			log.saveError("Error", Msg.getMsg(getCtx(), "PriceListIncludingTaxWithSummaryTaxNotAllowed"));
 			return false;
 		}
 
