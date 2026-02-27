@@ -173,7 +173,7 @@ public class WorkflowElementHandler extends AbstractElementHandler {
 		}
 
 		try {
-			List<MWFNode> wns = new Query(ctx.ctx, MWFNode.Table_Name, "AD_Workflow_ID=? AND AD_Client_ID=?", getTrxName(ctx))
+			List<MWFNode> wns = new Query(ctx.ctx, MWFNode.Table_Name, "AD_Workflow_ID=? AND AD_Client_ID IN (0,?)", getTrxName(ctx))
 					.setParameters(AD_Workflow_ID, Env.getAD_Client_ID(ctx.ctx))
 					.list();
 			for (MWFNode wn : wns) {
@@ -188,14 +188,14 @@ public class WorkflowElementHandler extends AbstractElementHandler {
 					createNodePara(ctx, document, ad_wf_node_para_id);
 				}
 
-				List<MWFNodeNext> wnns = new Query(ctx.ctx, MWFNodeNext.Table_Name, "AD_WF_Node_ID=? AND AD_Client_ID=?", getTrxName(ctx))
+				List<MWFNodeNext> wnns = new Query(ctx.ctx, MWFNodeNext.Table_Name, "AD_WF_Node_ID=? AND AD_Client_ID IN (0,?)", getTrxName(ctx))
 						.setParameters(nodeId, Env.getAD_Client_ID(ctx.ctx))
 						.list();
 				for (MWFNodeNext wnn : wnns) {
 					int ad_wf_nodenext_id = wnn.getAD_WF_NodeNext_ID();
 					createNodeNext(ctx, document, ad_wf_nodenext_id);
 
-					List<MWFNextCondition> wncs = new Query(ctx.ctx, MWFNextCondition.Table_Name, "AD_WF_NodeNext_ID=? AND AD_Client_ID=?", getTrxName(ctx))
+					List<MWFNextCondition> wncs = new Query(ctx.ctx, MWFNextCondition.Table_Name, "AD_WF_NodeNext_ID=? AND AD_Client_ID IN (0,?)", getTrxName(ctx))
 							.setParameters(ad_wf_nodenext_id, Env.getAD_Client_ID(ctx.ctx))
 							.list();
 					for (MWFNextCondition wnc : wncs) {
