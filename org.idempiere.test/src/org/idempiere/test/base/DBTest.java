@@ -13,6 +13,7 @@
  *****************************************************************************/
 package org.idempiere.test.base;
 
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,6 +50,7 @@ import org.compiere.model.PO;
 import org.compiere.model.X_Test;
 import org.compiere.util.DB;
 import org.compiere.util.Env;
+import org.compiere.util.Ini;
 import org.compiere.util.KeyNamePair;
 import org.compiere.util.Language;
 import org.compiere.util.TimeUtil;
@@ -1494,4 +1496,20 @@ public class DBTest extends AbstractTestCase
 		count = DB.getSQLValue(null, sql, inClause.parameters());
 		assertTrue(count >= 2, "NOT IN with non-existent ID should return all clients");
 	}
+
+	@Test
+	public void testQuotedColumnPostgres() {
+		// Build a WHERE clause using inClauseForCSV and execute it
+		if (DB.isPostgreSQL()) {
+			final String sql = "SELECT AD_Workflow_UU,AD_Workflow_ID,Value,Name,\"limit\" FROM AD_Workflow WHERE AD_Workflow_ID=50024";
+			assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
+			try {
+				Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "Y");
+				assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
+			} finally {
+				Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "N");
+			}
+		}
+	}
+
 }
