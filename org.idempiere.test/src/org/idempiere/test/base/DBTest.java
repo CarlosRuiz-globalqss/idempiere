@@ -1499,16 +1499,16 @@ public class DBTest extends AbstractTestCase
 
 	@Test
 	public void testQuotedColumnPostgres() {
-		// Build a WHERE clause using inClauseForCSV and execute it
-		if (DB.isPostgreSQL()) {
-			final String sql = "SELECT AD_Workflow_UU,AD_Workflow_ID,Value,Name,\"limit\" FROM AD_Workflow WHERE AD_Workflow_ID=50024";
+		if (DB.isOracle()) return;
+		// this query as constructed at GridTable.createSelectSql on native mode
+		// on native mode the Limit column is changed to "limit" calling DB_PostgreSQL.quoteColumnName
+		final String sql = "SELECT AD_WF_Node_UU,AD_WF_Node_ID,Value,Name,Description,\"action\",R_MailText_ID,\"limit\" FROM AD_WF_Node WHERE AD_WF_Node_ID=244";
+		assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
+		try {
+			Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "Y");
 			assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
-			try {
-				Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "Y");
-				assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
-			} finally {
-				Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "N");
-			}
+		} finally {
+			Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "N");
 		}
 	}
 
