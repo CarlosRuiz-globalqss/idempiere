@@ -1486,6 +1486,9 @@ public abstract class PO
 				to.m_newValues[i] = from.m_oldValues[i];
 			}
 		}	//	same class
+		MTable tableTo = MTable.get(to.getCtx(), to.get_Table_ID());
+		if (!tableTo.isIDKeyTable() && !tableTo.isUUIDKeyTable()) // multi-key table
+			to.setKeyInfo();
 	}	//	copy
 
 	/**
