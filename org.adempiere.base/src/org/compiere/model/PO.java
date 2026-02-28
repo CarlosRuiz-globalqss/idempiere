@@ -2896,9 +2896,9 @@ public abstract class PO
 			MRecentItem.clearLabel(p_info.getAD_Table_ID(), get_ID(), get_UUID());
 		if (success) {
 			if (get_ID() == 0)
-				CCache.scheduleCacheReset(p_info.getTableName(), get_UUID(), newRecord, get_TrxName());
+				CacheMgt.scheduleCacheReset(p_info.getTableName(), get_UUID(), newRecord, get_TrxName());
 			else
-				CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), newRecord, get_TrxName());
+				CacheMgt.scheduleCacheReset(p_info.getTableName(), get_ID(), newRecord, get_TrxName());
 			if (p_info.getTableName().endsWith("_Trl") && CacheMgt.get().hasCache(TRANSLATION_CACHE_TABLE_NAME) && !newRecord) {
 				MTable table = MTable.get(getCtx(), p_info.getTableName().substring(0, p_info.getTableName().length() - 4));
 				POInfo parentInfo = POInfo.getPOInfo(getCtx(), table.getAD_Table_ID());
@@ -2929,7 +2929,7 @@ public abstract class PO
 							key = toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language"));
 						else
 							key = toTrlCacheKey(table.getTableName(), column, Integer.valueOf(fid), get_ValueAsString("AD_Language"));
-						CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
+						CacheMgt.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
 					}
 				}
 			}
@@ -4478,9 +4478,9 @@ public abstract class PO
 
 					// Schedule the reset cache for after committed the delete
 					if (get_ID() == 0)
-						CCache.scheduleCacheReset(p_info.getTableName(), get_UUID(), false, get_TrxName());
+						CacheMgt.scheduleCacheReset(p_info.getTableName(), get_UUID(), false, get_TrxName());
 					else
-						CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), false, get_TrxName());
+						CacheMgt.scheduleCacheReset(p_info.getTableName(), get_ID(), false, get_TrxName());
 
 					// trigger the deletion of attachments and archives for after committed the delete
 					trxdel.addTrxEventListener(new TrxEventListener() {
@@ -4778,7 +4778,7 @@ public abstract class PO
 		        for (String langName : availableLanguages) {
 		    		Language language = Language.getLanguage(langName);
 					String key = getTrlCacheKey(columnName, language.getAD_Language());
-					CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
+					CacheMgt.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
 				}
 			}
 		}

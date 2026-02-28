@@ -40,7 +40,7 @@ import org.compiere.model.MTable;
 import org.compiere.model.MWindow;
 import org.compiere.model.M_Element;
 import org.compiere.model.Query;
-import org.compiere.util.CCache;
+import org.compiere.util.CacheMgt;
 import org.compiere.util.DB;
 import org.compiere.util.Msg;
 import org.compiere.util.Util;
@@ -183,10 +183,10 @@ public class DatabaseTableRename extends SvrProcess {
 		table.setTableName(p_NewTableName);
 		table.saveEx();
 
-		CCache.scheduleCacheReset(MColumn.Table_Name, -1, false, get_TrxName());
-		CCache.scheduleCacheReset(MWindow.Table_Name, -1, false, get_TrxName());
-		CCache.scheduleCacheReset(MTab.Table_Name, -1, false, get_TrxName());
-		CCache.scheduleCacheReset(MField.Table_Name, -1, false, get_TrxName());
+		CacheMgt.scheduleCacheReset(MColumn.Table_Name, -1, false, get_TrxName());
+		CacheMgt.scheduleCacheReset(MWindow.Table_Name, -1, false, get_TrxName());
+		CacheMgt.scheduleCacheReset(MTab.Table_Name, -1, false, get_TrxName());
+		CacheMgt.scheduleCacheReset(MField.Table_Name, -1, false, get_TrxName());
 
 		return "@OK@";
 	}

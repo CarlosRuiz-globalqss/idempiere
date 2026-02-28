@@ -25,10 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.logging.Level;
 
 import org.adempiere.base.Core;
-import org.compiere.Adempiere;
 import org.compiere.model.SystemProperties;
 import org.idempiere.distributed.ICacheService;
 
@@ -43,9 +41,9 @@ import org.idempiere.distributed.ICacheService;
 public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 {
 	/**
-	 * 
+	 * generated serial id
 	 */
-	private static final long serialVersionUID = -8260526941192268245L;
+	private static final long serialVersionUID = 4960404895430292476L;
 
 	/** Key:value map of cached items */
 	protected Map<K, V> cache = null;
@@ -62,9 +60,6 @@ public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 	/** Default cache expire time in minutes **/
 	public static final int DEFAULT_EXPIRE_MINUTE = getDefaultExpireMinute();
 	
-	/**	Static Logger	*/
-	private static CLogger	s_log	= CLogger.getCLogger (CCache.class);
-
 	/**
 	 * Get default expire minute from system property (fallback to 60)
 	 * @return default expire time in minute
@@ -623,64 +618,4 @@ public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 	public boolean isExpire() {
 		return m_expire > 0 && m_timeExp > 0 && m_timeExp < System.currentTimeMillis();
 	}
-
-	/**
-	 * Schedule cache reset after transaction commit. If trxName is null or transaction cannot be found, the cache reset will be scheduled immediately
-	 *   exceptions are logged and ignored
-	 * @param cacheName
-	 * @param key - can be an Integer ID or String key, if key is -1, the whole cache will be reset
-	 * @param newRecord
-	 * @param trxName
-	 */
-	public static void scheduleCacheReset(String cacheName, Object key, boolean newRecord, String trxName) {
-		if (!CacheMgt.get().hasCache(cacheName))
-			return;
-		if (key instanceof Integer && (Integer)key == 0)
-			return;
-		try {
-			boolean cacheResetScheduled = false;
-			if (trxName != null) {
-				Trx trx = Trx.get(trxName, false);
-				if (trx != null) {
-					trx.addTrxEventListener(new TrxEventListener() {
-						@Override
-						public void afterRollback(Trx trx, boolean success) {
-							trx.removeTrxEventListener(this);
-						}
-						@Override
-						public void afterCommit(Trx sav, boolean success) {
-							if (success) {
-								if (!newRecord) {
-									if (key instanceof Integer)
-										Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, (Integer) key));
-									else
-										Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, String.valueOf(key)));
-								} else if (key instanceof Integer && (Integer)key > 0) {
-									Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(cacheName, (Integer) key));
-								}
-							}
-							trx.removeTrxEventListener(this);
-						}
-						@Override
-						public void afterClose(Trx trx) {
-						}
-					});
-					cacheResetScheduled = true;
-				}
-			}
-			if (!cacheResetScheduled) {
-				if (!newRecord) {
-					if (key instanceof Integer)
-						Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, (Integer) key));
-					else
-						Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, String.valueOf(key)));
-				} else if (key instanceof Integer && (Integer)key > 0) {
-					Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(cacheName, (Integer) key));
-				}
-			}
-		} catch (RuntimeException ex) {
-			s_log.log(Level.WARNING, "Failed to enqueue cache reset for " + cacheName + ", key=" + String.valueOf(key) + ", newRecord=" + newRecord + ", trxName=" + trxName, ex);
-		}
-	}
-
 }	//	CCache
