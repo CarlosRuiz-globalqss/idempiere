@@ -2895,7 +2895,10 @@ public abstract class PO
 		if (!newRecord && success)
 			MRecentItem.clearLabel(p_info.getAD_Table_ID(), get_ID(), get_UUID());
 		if (success) {
-			CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), newRecord, get_TrxName());
+			if (get_ID() == 0)
+				CCache.scheduleCacheReset(p_info.getTableName(), get_UUID(), newRecord, get_TrxName());
+			else
+				CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), newRecord, get_TrxName());
 			if (p_info.getTableName().endsWith("_Trl") && CacheMgt.get().hasCache(TRANSLATION_CACHE_TABLE_NAME) && !newRecord) {
 				MTable table = MTable.get(getCtx(), p_info.getTableName().substring(0, p_info.getTableName().length() - 4));
 				POInfo parentInfo = POInfo.getPOInfo(getCtx(), table.getAD_Table_ID());
@@ -2921,10 +2924,12 @@ public abstract class PO
 					final String fuuid = uuid;
 					final int fid = id;
 					for (String column : translatedColumns) {
+						String key;
 						if (fuuid != null)
-							CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language")), newRecord, get_TrxName());
+							key = toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language"));
 						else
-							CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, toTrlCacheKey(table.getTableName(), column, Integer.valueOf(fid), get_ValueAsString("AD_Language")), newRecord, get_TrxName());
+							key = toTrlCacheKey(table.getTableName(), column, Integer.valueOf(fid), get_ValueAsString("AD_Language"));
+						CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
 					}
 				}
 			}
@@ -4470,24 +4475,13 @@ public abstract class PO
 			{
 				Trx trxdel = Trx.get(get_TrxName(), false);
 				if (trxdel != null) {
+
 					// Schedule the reset cache for after committed the delete
-					if (CacheMgt.get().hasCache(p_info.getTableName())) {
-						trxdel.addTrxEventListener(new TrxEventListener() {
-							@Override
-							public void afterRollback(Trx trxdel, boolean success) {
-								trxdel.removeTrxEventListener(this);
-							}
-							@Override
-							public void afterCommit(Trx trxdel, boolean success) {
-								if (success)
-									Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(p_info.getTableName(), Record_ID));
-								trxdel.removeTrxEventListener(this);
-							}
-							@Override
-							public void afterClose(Trx trxdel) {
-							}
-						});
-					}
+					if (get_ID() == 0)
+						CCache.scheduleCacheReset(p_info.getTableName(), get_UUID(), false, get_TrxName());
+					else
+						CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), false, get_TrxName());
+
 					// trigger the deletion of attachments and archives for after committed the delete
 					trxdel.addTrxEventListener(new TrxEventListener() {
 						@Override
@@ -4510,6 +4504,7 @@ public abstract class PO
 						public void afterClose(Trx trxdel) {
 						}
 					});
+
 				}
 				if (localTrx != null)
 				{
@@ -4783,7 +4778,7 @@ public abstract class PO
 		        for (String langName : availableLanguages) {
 		    		Language language = Language.getLanguage(langName);
 					String key = getTrlCacheKey(columnName, language.getAD_Language());
-					CacheMgt.get().reset(TRANSLATION_CACHE_TABLE_NAME, key);
+					CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, key, false, get_TrxName());
 				}
 			}
 		}
