@@ -2913,7 +2913,8 @@ public abstract class PO
 					String uuid = null;
 					if (m_IDs[0] instanceof String) {
 						//TestUU_Trl -> TestUU_UU
-						uuid = get_ValueAsString(p_info.getTableName().substring(0, p_info.getTableName().length() - "_Trl".length()) + "_UU");
+						String baseTableName = p_info.getTableName().substring(0, p_info.getTableName().length() - "_Trl".length());
+						uuid = get_ValueAsString(PO.getUUIDColumnName(baseTableName));
 					} else {
 						id = get_ID();
 					}

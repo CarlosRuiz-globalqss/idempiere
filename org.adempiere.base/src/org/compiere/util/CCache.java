@@ -652,7 +652,7 @@ public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 									if (key instanceof Integer)
 										Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, (Integer) key));
 									else
-										Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, key.toString()));
+										Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, String.valueOf(key)));
 								} else if (key instanceof Integer && (Integer)key > 0) {
 									Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(cacheName, (Integer) key));
 								}
@@ -671,13 +671,13 @@ public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 					if (key instanceof Integer)
 						Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, (Integer) key));
 					else
-						Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, key.toString()));
+						Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(cacheName, String.valueOf(key)));
 				} else if (key instanceof Integer && (Integer)key > 0) {
 					Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(cacheName, (Integer) key));
 				}
 			}
 		} catch (RuntimeException ex) {
-			s_log.log(Level.WARNING, "Failed to enqueue cache reset for " + cacheName + ", key=" + key.toString() + ", newRecord=" + newRecord + ", trxName=" + trxName, ex);
+			s_log.log(Level.WARNING, "Failed to enqueue cache reset for " + cacheName + ", key=" + String.valueOf(key) + ", newRecord=" + newRecord + ", trxName=" + trxName, ex);
 		}
 	}
 
