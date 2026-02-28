@@ -2894,104 +2894,37 @@ public abstract class PO
 		}
 		if (!newRecord && success)
 			MRecentItem.clearLabel(p_info.getAD_Table_ID(), get_ID(), get_UUID());
-		if (success && CacheMgt.get().hasCache(p_info.getTableName())) {
-			boolean cacheResetScheduled = false;
-			if (get_TrxName() != null) {
-				Trx trx = Trx.get(get_TrxName(), false);
-				if (trx != null) {
-					trx.addTrxEventListener(new TrxEventListener() {
-						@Override
-						public void afterRollback(Trx trx, boolean success) {
-							trx.removeTrxEventListener(this);
-						}
-						@Override
-						public void afterCommit(Trx sav, boolean success) {
-							if (success)
-								if (!newRecord)
-									Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(p_info.getTableName(), get_ID()));
-								else if (get_ID() > 0)
-									Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(p_info.getTableName(), get_ID()));
-							trx.removeTrxEventListener(this);
-						}
-						@Override
-						public void afterClose(Trx trx) {
-						}
-					});
-					cacheResetScheduled = true;
-				}
-			}
-			if (!cacheResetScheduled) {
-				if (!newRecord)
-					Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().reset(p_info.getTableName(), get_ID()));
-				else if (get_ID() > 0)
-					Adempiere.getThreadPoolExecutor().submit(() -> CacheMgt.get().newRecord(p_info.getTableName(), get_ID()));
-			}
-		} else if (success && p_info.getTableName().endsWith("_Trl") && CacheMgt.get().hasCache(TRANSLATION_CACHE_TABLE_NAME) && !newRecord) {
-			MTable table = MTable.get(getCtx(), p_info.getTableName().substring(0, p_info.getTableName().length() - 4));
-			POInfo parentInfo = POInfo.getPOInfo(getCtx(), table.getAD_Table_ID());
-			List<String> translatedColumns = new ArrayList<>();
-			for (int i = 0; i < parentInfo.getColumnCount(); i++)
-			{
-				String columnName = parentInfo.getColumnName(i);
-				if (parentInfo.isColumnTranslated(i) && updatedColumns.contains(columnName))
+		if (success) {
+			CCache.scheduleCacheReset(p_info.getTableName(), get_ID(), newRecord, get_TrxName());
+			if (p_info.getTableName().endsWith("_Trl") && CacheMgt.get().hasCache(TRANSLATION_CACHE_TABLE_NAME) && !newRecord) {
+				MTable table = MTable.get(getCtx(), p_info.getTableName().substring(0, p_info.getTableName().length() - 4));
+				POInfo parentInfo = POInfo.getPOInfo(getCtx(), table.getAD_Table_ID());
+				List<String> translatedColumns = new ArrayList<>();
+				for (int i = 0; i < parentInfo.getColumnCount(); i++)
 				{
-					translatedColumns.add(columnName);
-				}
-			}
-			if (translatedColumns.size() > 0) {
-				int id = 0;
-				String uuid = null;
-				if (m_IDs[0] instanceof String) {
-					//TestUU_Trl -> TestUU_UU
-					uuid = get_ValueAsString(p_info.getTableName().substring(0, p_info.getTableName().length() - "_Trl".length()) + "_UU");
-				} else {
-					id = get_ID();
-				}
-				final String fuuid = uuid;
-				final int fid = id;
-				
-				boolean cacheResetScheduled = false;
-				if (get_TrxName() != null) {
-					Trx trx = Trx.get(get_TrxName(), false);
-					if (trx != null) {
-						trx.addTrxEventListener(new TrxEventListener() {
-							@Override
-							public void afterRollback(Trx trx, boolean success) {
-								trx.removeTrxEventListener(this);
-							}
-							@Override
-							public void afterCommit(Trx sav, boolean success) {
-								if (success)
-									Adempiere.getThreadPoolExecutor().submit(() -> { 
-										for (String column : translatedColumns) {
-											if (fuuid != null)
-												CacheMgt.get().reset(TRANSLATION_CACHE_TABLE_NAME, 
-													toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language")));
-											else
-												CacheMgt.get().reset(TRANSLATION_CACHE_TABLE_NAME, 
-													toTrlCacheKey(table.getTableName(), column, fid, get_ValueAsString("AD_Language")));
-										}
-									});
-								trx.removeTrxEventListener(this);
-							}
-							@Override
-							public void afterClose(Trx trx) {
-							}
-						});
-						cacheResetScheduled = true;
+					String columnName = parentInfo.getColumnName(i);
+					if (parentInfo.isColumnTranslated(i) && updatedColumns.contains(columnName))
+					{
+						translatedColumns.add(columnName);
 					}
 				}
-				if (!cacheResetScheduled) {
-					Adempiere.getThreadPoolExecutor().submit(() -> {
-						for (String column : translatedColumns) {
-							if (fuuid != null)
-								CacheMgt.get().reset(TRANSLATION_CACHE_TABLE_NAME, 
-									toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language")));
-							else
-								CacheMgt.get().reset(TRANSLATION_CACHE_TABLE_NAME, 
-									toTrlCacheKey(table.getTableName(), column, fid, get_ValueAsString("AD_Language")));
-						}
-					});
+				if (translatedColumns.size() > 0) {
+					int id = 0;
+					String uuid = null;
+					if (m_IDs[0] instanceof String) {
+						//TestUU_Trl -> TestUU_UU
+						uuid = get_ValueAsString(p_info.getTableName().substring(0, p_info.getTableName().length() - "_Trl".length()) + "_UU");
+					} else {
+						id = get_ID();
+					}
+					final String fuuid = uuid;
+					final int fid = id;
+					for (String column : translatedColumns) {
+						if (fuuid != null)
+							CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, toTrlCacheKey(table.getTableName(), column, fuuid, get_ValueAsString("AD_Language")), newRecord, get_TrxName());
+						else
+							CCache.scheduleCacheReset(TRANSLATION_CACHE_TABLE_NAME, toTrlCacheKey(table.getTableName(), column, Integer.valueOf(fid), get_ValueAsString("AD_Language")), newRecord, get_TrxName());
+					}
 				}
 			}
 		}
@@ -6609,4 +6542,5 @@ public abstract class PO
 	           " FROM " + tableName +
 	           " WHERE " + uuCol + " = " + DB.TO_STRING(uuidValue) + ")";
 	}
+
 }   //  PO
