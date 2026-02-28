@@ -1500,6 +1500,7 @@ public class DBTest extends AbstractTestCase
 	@Test
 	public void testQuotedColumnPostgres() {
 		if (DB.isOracle()) return;
+		final String originalLogMigrationScript = Env.getContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT);
 		// this query as constructed at GridTable.createSelectSql on native mode
 		// on native mode the Limit column is changed to "limit" calling DB_PostgreSQL.quoteColumnName
 		final String sql = "SELECT AD_WF_Node_UU,AD_WF_Node_ID,Value,Name,Description,\"action\",R_MailText_ID,\"limit\" FROM AD_WF_Node WHERE AD_WF_Node_ID=244";
@@ -1508,7 +1509,7 @@ public class DBTest extends AbstractTestCase
 			Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "Y");
 			assertThatNoException().isThrownBy(() -> DB.getSQLArrayObjectsEx(getTrxName(), sql));
 		} finally {
-			Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, "N");
+			Env.setContext(Env.getCtx(), Ini.P_LOGMIGRATIONSCRIPT, originalLogMigrationScript);
 		}
 	}
 
