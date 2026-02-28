@@ -878,7 +878,8 @@ public class MAcctSchema extends X_C_AcctSchema implements ImmutablePOSupport
 			|| is_ValueChanged(COLUMNNAME_Period_OpenFuture)
 			|| is_ValueChanged(COLUMNNAME_BackDateDay)
 			|| is_ValueChanged(COLUMNNAME_AutoPeriodControl)) {
-			CacheMgt.scheduleCacheReset(Table_Name, -1, false, get_TrxName());
+			CacheMgt.scheduleCacheReset(MPeriod.Table_Name, -1, false, get_TrxName());
+			CacheMgt.scheduleCacheReset(s_schema.getTableName(), -1, false, get_TrxName());
 		}
 		return success;
 	}
