@@ -635,6 +635,8 @@ public class CCache<K,V> implements CacheInterface, Map<K, V>, Serializable
 	public static void scheduleCacheReset(String cacheName, Object key, boolean newRecord, String trxName) {
 		if (!CacheMgt.get().hasCache(cacheName))
 			return;
+		if (key instanceof Integer && (Integer)key == 0)
+			return;
 		try {
 			boolean cacheResetScheduled = false;
 			if (trxName != null) {
